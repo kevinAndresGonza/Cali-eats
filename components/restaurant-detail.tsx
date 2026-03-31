@@ -122,6 +122,9 @@ export function RestaurantDetail({
           aria-describedby={undefined}
         >
           <Drawer.Title className="sr-only">{restaurant.name}</Drawer.Title>
+          <Drawer.Description className="sr-only">
+            Informacion detallada del restaurante {restaurant.name}
+          </Drawer.Description>
           <div className="flex-1 overflow-y-auto no-scrollbar">
             {/* Image Carousel */}
             <div className="relative aspect-[4/3] w-full overflow-hidden">

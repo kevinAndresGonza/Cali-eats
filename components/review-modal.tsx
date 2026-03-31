@@ -63,6 +63,9 @@ export function ReviewModal({
           aria-describedby={undefined}
         >
           <Drawer.Title className="sr-only">Escribir resena para {restaurantName}</Drawer.Title>
+          <Drawer.Description className="sr-only">
+            Formulario para escribir una resena del restaurante
+          </Drawer.Description>
           {/* Drag Handle */}
           <div className="mx-auto mt-4 h-1.5 w-12 flex-shrink-0 rounded-full bg-muted" />
           

@@ -36,35 +36,16 @@ export default function CaliEatsApp() {
   })
 
   const { login, favorites, saved } = useUserStore()
-  const [visibleCount, setVisibleCount] = useState(10)
 
   // Calculate favorite/saved counts for bottom nav badges
   const favoritesCount = favorites.length + saved.length
 
-  const allFilteredRestaurants = activeCategory
+  const filteredRestaurants = activeCategory
     ? restaurants.filter((r) => {
         const category = categories.find((c) => c.id === activeCategory)
         return category && r.category === category.name
       })
     : restaurants
-
-  // Show only visible restaurants for performance
-  const visibleRestaurants = allFilteredRestaurants.slice(0, visibleCount)
-  const hasMore = visibleCount < allFilteredRestaurants.length
-
-  // Reset visible count when category changes
-  useEffect(() => {
-    setVisibleCount(10)
-  }, [activeCategory])
-
-  // Load more restaurants when scrolling
-  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLDivElement
-    const bottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 200
-    if (bottom && hasMore) {
-      setVisibleCount((prev) => Math.min(prev + 10, allFilteredRestaurants.length))
-    }
-  }, [hasMore, allFilteredRestaurants.length])
 
   const showToast = useCallback((message: string, type: ToastType) => {
     setToast({ message, type, isVisible: true })
@@ -184,31 +165,14 @@ export default function CaliEatsApp() {
               />
 
               {/* Restaurant Feed */}
-              <div 
-                className="flex-1 overflow-y-auto no-scrollbar pb-32"
-                onScroll={handleScroll}
-              >
-                <div className="px-4 mb-2 flex items-center justify-between">
-                  <p className="text-xs text-muted-foreground">
-                    {allFilteredRestaurants.length} restaurantes disponibles
-                  </p>
-                  {activeCategory && (
-                    <button
-                      onClick={() => setActiveCategory(null)}
-                      className="text-xs font-medium text-primary touch-manipulation"
-                    >
-                      Ver todos
-                    </button>
-                  )}
-                </div>
-                {visibleRestaurants.length > 0 ? (
-                  <>
-                  {visibleRestaurants.map((restaurant, index) => (
+              <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
+                {filteredRestaurants.length > 0 ? (
+                  filteredRestaurants.map((restaurant, index) => (
                     <motion.div
                       key={restaurant.id}
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index < 5 ? index * 0.05 : 0 }}
+                      transition={{ delay: index * 0.08 }}
                     >
                       <RestaurantCard
                         restaurant={restaurant}
@@ -219,18 +183,6 @@ export default function CaliEatsApp() {
                       />
                     </motion.div>
                   ))
-                  )}
-                  {/* Load more indicator */}
-                  {hasMore && (
-                    <div className="flex items-center justify-center py-8">
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                        className="h-6 w-6 rounded-full border-2 border-primary border-t-transparent"
-                      />
-                    </div>
-                  )}
-                </>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-20 px-4">
                     <p className="text-center text-muted-foreground">

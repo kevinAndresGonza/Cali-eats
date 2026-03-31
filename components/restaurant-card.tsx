@@ -4,13 +4,15 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Heart, Bookmark, Star, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { useUserStore } from "@/lib/store"
 import type { Restaurant } from "@/lib/types"
 
 interface RestaurantCardProps {
   restaurant: Restaurant
   onPress: () => void
-  onLike: () => void
-  onSave: () => void
+  onLike: (isLiked: boolean) => void
+  onSave: (isSaved: boolean) => void
+  onAuthRequired: () => void
 }
 
 export function RestaurantCard({
@@ -18,25 +20,45 @@ export function RestaurantCard({
   onPress,
   onLike,
   onSave,
+  onAuthRequired,
 }: RestaurantCardProps) {
-  const [isLiked, setIsLiked] = useState(restaurant.isFavorite)
-  const [isSaved, setIsSaved] = useState(restaurant.isSaved)
+  const { isLoggedIn, isFavorite, isSaved, toggleFavorite, toggleSaved } = useUserStore()
   const [showHeartPulse, setShowHeartPulse] = useState(false)
+  const [showSavePulse, setShowSavePulse] = useState(false)
+
+  const isLiked = isFavorite(restaurant.id)
+  const isSavedItem = isSaved(restaurant.id)
 
   const handleLike = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setIsLiked(!isLiked)
-    if (!isLiked) {
+    
+    if (!isLoggedIn) {
+      onAuthRequired()
+      return
+    }
+    
+    const newState = toggleFavorite(restaurant.id)
+    if (newState) {
       setShowHeartPulse(true)
       setTimeout(() => setShowHeartPulse(false), 600)
     }
-    onLike()
+    onLike(newState)
   }
 
   const handleSave = (e: React.MouseEvent) => {
     e.stopPropagation()
-    setIsSaved(!isSaved)
-    onSave()
+    
+    if (!isLoggedIn) {
+      onAuthRequired()
+      return
+    }
+    
+    const newState = toggleSaved(restaurant.id)
+    if (newState) {
+      setShowSavePulse(true)
+      setTimeout(() => setShowSavePulse(false), 600)
+    }
+    onSave(newState)
   }
 
   return (
@@ -69,16 +91,16 @@ export function RestaurantCard({
           <motion.button
             whileTap={{ scale: 0.85 }}
             onClick={handleLike}
-            className="relative flex h-11 w-11 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm touch-manipulation"
+            className="relative flex h-12 w-12 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm touch-manipulation"
             aria-label={isLiked ? "Quitar de favoritos" : "Agregar a favoritos"}
           >
             <AnimatePresence>
               {showHeartPulse && (
                 <motion.div
                   initial={{ scale: 1, opacity: 1 }}
-                  animate={{ scale: 2, opacity: 0 }}
+                  animate={{ scale: 2.5, opacity: 0 }}
                   exit={{ opacity: 0 }}
-                  className="absolute inset-0 rounded-full bg-red-500/30"
+                  className="absolute inset-0 rounded-full bg-red-500/40"
                 />
               )}
             </AnimatePresence>
@@ -98,15 +120,30 @@ export function RestaurantCard({
           <motion.button
             whileTap={{ scale: 0.85 }}
             onClick={handleSave}
-            className="flex h-11 w-11 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm touch-manipulation"
-            aria-label={isSaved ? "Quitar de guardados" : "Guardar"}
+            className="relative flex h-12 w-12 items-center justify-center rounded-full bg-black/50 backdrop-blur-sm touch-manipulation"
+            aria-label={isSavedItem ? "Quitar de guardados" : "Guardar"}
           >
-            <Bookmark
-              className={cn(
-                "h-6 w-6 transition-colors duration-200",
-                isSaved ? "fill-primary text-primary" : "text-white"
+            <AnimatePresence>
+              {showSavePulse && (
+                <motion.div
+                  initial={{ scale: 1, opacity: 1 }}
+                  animate={{ scale: 2.5, opacity: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="absolute inset-0 rounded-full bg-primary/40"
+                />
               )}
-            />
+            </AnimatePresence>
+            <motion.div
+              animate={{ scale: isSavedItem ? [1, 1.3, 1] : 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <Bookmark
+                className={cn(
+                  "h-6 w-6 transition-colors duration-200",
+                  isSavedItem ? "fill-primary text-primary" : "text-white"
+                )}
+              />
+            </motion.div>
           </motion.button>
         </div>
         

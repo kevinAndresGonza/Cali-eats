@@ -1,6 +1,10 @@
 # Supabase Configuration
 
-## 1. Crear Proyecto en Supabase
+**Proyecto:** `ylcqugvpsrdfyhxtmzhc`  
+**URL:** https://ylcqugvpsrdfyhxtmzhc.supabase.co  
+**Dashboard:** https://supabase.com/dashboard/project/ylcqugvpsrdfyhxtmzhc
+
+## 1. Crear Proyecto en Supabase (Ya completado ✅)
 
 1. Ir a https://supabase.com/
 2. Crear cuenta o iniciar sesión

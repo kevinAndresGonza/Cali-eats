@@ -1,5 +1,4 @@
 // Service Worker para PWA y Notificaciones Push
-/// <reference lib="webworker" />
 
 const CACHE_NAME = 'cali-eats-v1';
 const STATIC_ASSETS = [
@@ -17,7 +16,7 @@ self.addEventListener('install', (event) => {
     })
   );
   // Forzar activación inmediata
-  (self as unknown as ServiceWorkerGlobalScope).skipWaiting();
+  self.skipWaiting();
 });
 
 // Activación: Limpiar caches antiguas
@@ -32,7 +31,7 @@ self.addEventListener('activate', (event) => {
     })
   );
   // Tomar control inmediatamente
-  (self as unknown as ServiceWorkerGlobalScope).clients.claim();
+  self.clients.claim();
 });
 
 // Fetch: Estrategia Cache-First con Network Fallback
@@ -91,7 +90,7 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('push', (event) => {
   const data = event.data?.json() ?? {};
   
-  const options: NotificationOptions = {
+  const options = {
     body: data.body || '¡Nuevos restaurantes cerca de ti!',
     icon: '/icon-dark-32x32.png',
     badge: '/icon-dark-32x32.png',
@@ -105,7 +104,7 @@ self.addEventListener('push', (event) => {
   };
 
   event.waitUntil(
-    (self as unknown as ServiceWorkerGlobalScope).registration.showNotification(
+    self.registration.showNotification(
       data.title || 'Cali Eats',
       options
     )
@@ -126,7 +125,7 @@ self.addEventListener('notificationclick', (event) => {
   }
 
   event.waitUntil(
-    (self as unknown as ServiceWorkerGlobalScope).clients.matchAll({ type: 'window' }).then((clients) => {
+    self.clients.matchAll({ type: 'window' }).then((clients) => {
       // Si hay una ventana abierta, enfocarla
       for (const client of clients) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
@@ -135,9 +134,7 @@ self.addEventListener('notificationclick', (event) => {
         }
       }
       // Si no, abrir nueva ventana
-      return (self as unknown as ServiceWorkerGlobalScope).clients.openWindow(url);
+      return self.clients.openWindow(url);
     })
   );
 });
-
-export {};

@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from 'next'
 import { Inter, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { AuthProvider } from '@/components/auth-provider'
+import { AuthSync } from '@/components/auth-sync'
+import { ServiceWorkerRegistration } from '@/components/sw-registration'
 import './globals.css'
 
 const inter = Inter({ 
@@ -56,7 +59,11 @@ export default function RootLayout({
   return (
     <html lang="es" className="dark">
       <body className={`${inter.variable} ${geistMono.variable} font-sans antialiased`}>
-        {children}
+        <AuthProvider>
+          <AuthSync />
+          <ServiceWorkerRegistration />
+          {children}
+        </AuthProvider>
         <Analytics />
       </body>
     </html>

@@ -15,15 +15,19 @@ export interface Restaurant {
   phone: string
   isFavorite: boolean
   isSaved: boolean
+  lat: number
+  lng: number
 }
 
 export interface Review {
   id: string
+  restaurantId: string
   userName: string
   userAvatar: string
   rating: number
   comment: string
   date: string
+  images?: string[]
 }
 
 export interface Category {

@@ -4,6 +4,7 @@ import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Drawer } from "vaul"
 import { X, Mail, Eye, EyeOff, User } from "lucide-react"
+import { signIn } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { cn } from "@/lib/utils"
@@ -68,17 +69,19 @@ export function AuthModal({ isOpen, onClose, onLogin }: AuthModalProps) {
 
   const handleGoogleLogin = async () => {
     setIsLoading(true)
-    // Simulate Google OAuth
-    await new Promise((resolve) => setTimeout(resolve, 1500))
     
-    onLogin({
-      name: "Usuario Google",
-      email: "usuario@gmail.com",
-      avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=google",
-    })
-    
-    setIsLoading(false)
-    onClose()
+    try {
+      await signIn("google", { 
+        callbackUrl: "/",
+        redirect: false 
+      })
+      // NextAuth manejará el redirect, cerramos el modal
+      onClose()
+    } catch (error) {
+      console.error("Error al iniciar sesión con Google:", error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const resetForm = () => {

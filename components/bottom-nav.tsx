@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, AnimatePresence } from "framer-motion"
-import { Compass, Search, Heart, User } from "lucide-react"
+import { Compass, Search, Heart, User, MapPin, Home } from "lucide-react"
 import { cn } from "@/lib/utils"
 
 interface BottomNavProps {
@@ -11,7 +11,8 @@ interface BottomNavProps {
 }
 
 const tabs = [
-  { id: "explore", icon: Compass, label: "Explorar" },
+  { id: "explore", icon: Home, label: "Inicio" },
+  { id: "map", icon: MapPin, label: "Mapa" },
   { id: "search", icon: Search, label: "Buscar" },
   { id: "favorites", icon: Heart, label: "Favoritos" },
   { id: "profile", icon: User, label: "Perfil" },

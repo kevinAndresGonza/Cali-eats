@@ -8,10 +8,12 @@ import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { useUserStore } from "@/lib/store"
+import { ImageUpload } from "./image-upload"
 
 interface ReviewModalProps {
   isOpen: boolean
   onClose: () => void
+  restaurantId: string
   restaurantName: string
   onSuccess: () => void
   onAuthRequired: () => void
@@ -20,11 +22,12 @@ interface ReviewModalProps {
 export function ReviewModal({ 
   isOpen, 
   onClose, 
+  restaurantId,
   restaurantName,
   onSuccess,
   onAuthRequired
 }: ReviewModalProps) {
-  const { isLoggedIn, user } = useUserStore()
+  const { isLoggedIn, user, addReview } = useUserStore()
   const [rating, setRating] = useState(0)
   const [hoveredRating, setHoveredRating] = useState(0)
   const [comment, setComment] = useState("")
@@ -40,8 +43,17 @@ export function ReviewModal({
     if (rating === 0) return
     
     setIsSubmitting(true)
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
+    
+    // Save review to store
+    addReview({
+      restaurantId,
+      rating,
+      comment,
+    })
+    
+    // Simulate API call delay for UX
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    
     setIsSubmitting(false)
     setRating(0)
     setComment("")
@@ -161,31 +173,12 @@ export function ReviewModal({
             </div>
 
             {/* Add photos */}
-            <div className="mb-4">
-              <label className="text-sm font-medium text-foreground mb-2 block">
-                Agregar fotos (opcional)
-              </label>
-              <div className="flex gap-2">
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  className="flex h-20 w-20 flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-secondary touch-manipulation"
-                >
-                  <Camera className="h-6 w-6 text-muted-foreground mb-1" />
-                  <span className="text-[10px] text-muted-foreground">Camara</span>
-                </motion.button>
-                <motion.button
-                  whileTap={{ scale: 0.95 }}
-                  className="flex h-20 w-20 flex-col items-center justify-center rounded-xl border-2 border-dashed border-border bg-secondary touch-manipulation"
-                >
-                  <ImageIcon className="h-6 w-6 text-muted-foreground mb-1" />
-                  <span className="text-[10px] text-muted-foreground">Galeria</span>
-                </motion.button>
-                {selectedImages.map((img, i) => (
-                  <div key={i} className="relative h-20 w-20 rounded-xl overflow-hidden">
-                    <img src={img} alt="" className="h-full w-full object-cover" />
-                  </div>
-                ))}
-              </div>
+            <div className="mb-6">
+              <ImageUpload
+                images={selectedImages}
+                onImagesChange={setSelectedImages}
+                maxImages={5}
+              />
             </div>
           </div>
           

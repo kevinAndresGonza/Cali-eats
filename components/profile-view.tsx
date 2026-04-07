@@ -15,6 +15,7 @@ import {
   Bookmark,
   Edit3
 } from "lucide-react"
+import { signOut } from "next-auth/react"
 import { useUserStore } from "@/lib/store"
 
 interface ProfileViewProps {
@@ -34,7 +35,9 @@ const menuItems = [
 export function ProfileView({ onAuthRequired, onShowNotification }: ProfileViewProps) {
   const { user, isLoggedIn, logout, favorites, saved } = useUserStore()
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    // Logout from both NextAuth and Zustand store
+    await signOut({ redirect: false })
     logout()
     onShowNotification("Has cerrado sesion correctamente", "success")
   }

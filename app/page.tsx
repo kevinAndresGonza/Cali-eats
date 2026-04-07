@@ -1,10 +1,13 @@
 "use client"
 
-import { useState, useCallback, useEffect } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { BottomNav } from "@/components/bottom-nav"
 import { CategoryPills } from "@/components/category-pills"
-import { RestaurantCard } from "@/components/restaurant-card"
+import { Feed } from "@/components/feed"
+import { MapView } from "@/components/map-view"
+import { LocationBadge } from "@/components/location-badge"
+import { FilterModal, type FilterState } from "@/components/filter-modal"
 import { RestaurantDetail } from "@/components/restaurant-detail"
 import { ReviewModal } from "@/components/review-modal"
 import { SearchView } from "@/components/search-view"
@@ -35,17 +38,54 @@ export default function CaliEatsApp() {
     isVisible: false,
   })
 
+  const [isFilterOpen, setIsFilterOpen] = useState(false)
+  const [filters, setFilters] = useState<FilterState>({
+    priceRange: [],
+    minRating: 0,
+    maxDistance: null,
+  })
+
   const { login, favorites, saved } = useUserStore()
 
   // Calculate favorite/saved counts for bottom nav badges
   const favoritesCount = favorites.length + saved.length
 
-  const filteredRestaurants = activeCategory
-    ? restaurants.filter((r) => {
-        const category = categories.find((c) => c.id === activeCategory)
-        return category && r.category === category.name
+  // Apply all filters (category + advanced filters)
+  const filteredRestaurants = useMemo(() => {
+    let filtered = restaurants
+
+    // Filter by category
+    if (activeCategory) {
+      const category = categories.find((c) => c.id === activeCategory)
+      if (category) {
+        filtered = filtered.filter((r) => r.category === category.name)
+      }
+    }
+
+    // Filter by price range
+    if (filters.priceRange.length > 0) {
+      filtered = filtered.filter((r) => filters.priceRange.includes(r.priceRange))
+    }
+
+    // Filter by minimum rating
+    if (filters.minRating > 0) {
+      filtered = filtered.filter((r) => r.rating >= filters.minRating)
+    }
+
+    // Filter by maximum distance (would need real distance calculation with user location)
+    // For now, we'll parse the distance string as a fallback
+    if (filters.maxDistance !== null) {
+      filtered = filtered.filter((r) => {
+        const distanceStr = r.distance.replace(' km', '').replace(' m', '')
+        const distance = parseFloat(distanceStr)
+        const isMeters = r.distance.includes('m') && !r.distance.includes('km')
+        const distanceInKm = isMeters ? distance / 1000 : distance
+        return distanceInKm <= filters.maxDistance!
       })
-    : restaurants
+    }
+
+    return filtered
+  }, [activeCategory, filters])
 
   const showToast = useCallback((message: string, type: ToastType) => {
     setToast({ message, type, isVisible: true })
@@ -141,9 +181,17 @@ export default function CaliEatsApp() {
                     <h1 className="text-2xl font-bold text-foreground">
                       Cali Eats
                     </h1>
-                    <p className="text-sm text-muted-foreground">
-                      Descubre sabores unicos
-                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <LocationBadge />
+                      <motion.button
+                        whileTap={{ scale: 0.9 }}
+                        onClick={() => setIsFilterOpen(true)}
+                        className="flex items-center gap-1 px-2 py-1 rounded-full bg-secondary text-xs font-medium text-foreground"
+                      >
+                        <SlidersHorizontal className="h-3 w-3" />
+                        Filtros
+                      </motion.button>
+                    </div>
                   </div>
                   <motion.div 
                     whileTap={{ scale: 0.9 }}
@@ -164,38 +212,38 @@ export default function CaliEatsApp() {
                 onCategoryChange={setActiveCategory}
               />
 
-              {/* Restaurant Feed */}
-              <div className="flex-1 overflow-y-auto no-scrollbar pb-32">
-                {filteredRestaurants.length > 0 ? (
-                  filteredRestaurants.map((restaurant, index) => (
-                    <motion.div
-                      key={restaurant.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.08 }}
-                    >
-                      <RestaurantCard
-                        restaurant={restaurant}
-                        onPress={() => handleRestaurantPress(restaurant)}
-                        onLike={handleLike}
-                        onSave={handleSave}
-                        onAuthRequired={handleAuthRequired}
-                      />
-                    </motion.div>
-                  ))
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-20 px-4">
-                    <p className="text-center text-muted-foreground">
-                      No hay restaurantes en esta categoria
-                    </p>
-                    <button
-                      onClick={() => setActiveCategory(null)}
-                      className="mt-4 text-sm font-medium text-primary touch-manipulation"
-                    >
-                      Ver todos
-                    </button>
-                  </div>
-                )}
+              {/* Restaurant Feed with Infinite Scroll */}
+              <Feed
+                filteredRestaurants={filteredRestaurants}
+                onRestaurantPress={handleRestaurantPress}
+                onLike={handleLike}
+                onSave={handleSave}
+                onAuthRequired={handleAuthRequired}
+                activeCategory={activeCategory}
+              />
+            </motion.div>
+          )}
+
+          {activeTab === "map" && (
+            <motion.div
+              key="map"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="flex h-dvh flex-col safe-top pt-4"
+            >
+              <header className="px-4 pb-2">
+                <h1 className="text-2xl font-bold text-foreground">Mapa</h1>
+                <p className="text-sm text-muted-foreground">
+                  Ubicaciones de restaurantes
+                </p>
+              </header>
+              <div className="flex-1 overflow-hidden rounded-t-2xl mx-4 mb-4 border">
+                <MapView 
+                  onSelectRestaurant={handleRestaurantPress}
+                  filteredRestaurants={filteredRestaurants}
+                />
               </div>
             </motion.div>
           )}
@@ -267,6 +315,7 @@ export default function CaliEatsApp() {
       <ReviewModal
         isOpen={isReviewOpen}
         onClose={handleCloseReview}
+        restaurantId={selectedRestaurant?.id ?? ""}
         restaurantName={selectedRestaurant?.name ?? ""}
         onSuccess={handleReviewSuccess}
         onAuthRequired={handleAuthRequired}
@@ -277,6 +326,15 @@ export default function CaliEatsApp() {
         isOpen={isAuthOpen}
         onClose={handleCloseAuth}
         onLogin={handleLogin}
+      />
+
+      {/* Filter Modal */}
+      <FilterModal
+        isOpen={isFilterOpen}
+        onClose={() => setIsFilterOpen(false)}
+        filters={filters}
+        onApplyFilters={setFilters}
+        onClearFilters={() => setFilters({ priceRange: [], minRating: 0, maxDistance: null })}
       />
     </div>
   )

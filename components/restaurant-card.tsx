@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { Heart, Bookmark, Star, MapPin } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useUserStore } from "@/lib/store"
+import { useGeolocation } from "@/hooks/use-geolocation"
 import type { Restaurant } from "@/lib/types"
 
 interface RestaurantCardProps {
@@ -23,8 +24,23 @@ export function RestaurantCard({
   onAuthRequired,
 }: RestaurantCardProps) {
   const { isLoggedIn, isFavorite, isSaved, toggleFavorite, toggleSaved } = useUserStore()
+  const { latitude, longitude, calculateDistance, formatDistance } = useGeolocation()
   const [showHeartPulse, setShowHeartPulse] = useState(false)
   const [showSavePulse, setShowSavePulse] = useState(false)
+
+  // Calcular distancia real si tenemos ubicación del usuario y coordenadas del restaurante
+  const realDistance = useMemo(() => {
+    if (latitude && longitude && restaurant.lat && restaurant.lng) {
+      const distance = calculateDistance(
+        latitude,
+        longitude,
+        restaurant.lat,
+        restaurant.lng
+      )
+      return formatDistance(distance)
+    }
+    return restaurant.distance // Fallback a la distancia estática
+  }, [latitude, longitude, restaurant.lat, restaurant.lng, restaurant.distance, calculateDistance, formatDistance])
 
   const isLiked = isFavorite(restaurant.id)
   const isSavedItem = isSaved(restaurant.id)
@@ -171,7 +187,7 @@ export function RestaurantCard({
                 </span>
               </div>
               <span className="text-xs text-white/70">
-                {restaurant.distance}
+                {realDistance}
               </span>
             </div>
           </div>

@@ -39,10 +39,16 @@ export function RestaurantDetail({
   onAuthRequired,
 }: RestaurantDetailProps) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const { isLoggedIn, isFavorite, isSaved, toggleFavorite, toggleSaved } = useUserStore()
+  const { isLoggedIn, isFavorite, isSaved, toggleFavorite, toggleSaved, getRestaurantReviews } = useUserStore()
   const [showShareSheet, setShowShareSheet] = useState(false)
 
   if (!restaurant) return null
+
+  // Combine mock reviews with user's saved reviews for this restaurant
+  const restaurantMockReviews = mockReviews.filter(r => r.restaurantId === restaurant.id)
+  const userReviews = getRestaurantReviews(restaurant.id)
+  const allReviews = [...userReviews, ...restaurantMockReviews]
+  const totalReviewCount = restaurant.reviewCount + userReviews.length
 
   const isLiked = isFavorite(restaurant.id)
   const isSavedItem = isSaved(restaurant.id)
@@ -328,29 +334,35 @@ export function RestaurantDetail({
               <div className="py-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-foreground">
-                    Resenas ({restaurant.reviewCount})
+                    Reseñas ({totalReviewCount})
                   </h3>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={handleWriteReview}
                     className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground touch-manipulation"
                   >
-                    Escribir resena
+                    Escribir reseña
                   </motion.button>
                 </div>
                 
                 {/* Review Cards - Chat Bubble Style */}
                 <div className="space-y-4">
-                  {mockReviews.map((review, index) => (
-                    <motion.div
-                      key={review.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      <ReviewBubble review={review} />
-                    </motion.div>
-                  ))}
+                  {allReviews.length > 0 ? (
+                    allReviews.map((review, index) => (
+                      <motion.div
+                        key={review.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.1 }}
+                      >
+                        <ReviewBubble review={review} />
+                      </motion.div>
+                    ))
+                  ) : (
+                    <p className="text-center text-muted-foreground text-sm py-4">
+                      Sé el primero en escribir una reseña
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
